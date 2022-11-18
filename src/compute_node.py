@@ -16,7 +16,8 @@ class compute_node:
         job.add_elapsed_time(job.compute_time)
         storage_time = 0
         #Check cache
-
-        #If miss
-        #Query storage
+        if self.cache.check_cache(job.storage_id):
+            storage_time += self.cache_retrivel_time
+        else:
+            storage_time += self.storage.request_time(job.storage_id)
         job.add_elapsed_time(storage_time)
