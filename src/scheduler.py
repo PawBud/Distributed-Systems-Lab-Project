@@ -1,3 +1,5 @@
+import asyncio
+
 hash_policy_active = False
 
 def simple_file_hash_policy(fileHashes, job):
@@ -13,6 +15,14 @@ def round_robin_policy(last_node_index, node_list):
         last_node_index = 0
 
     return last_node_index
+
+async def check_jobs_completed(scheduler, total_jobs):
+    while(len(scheduler.ExitQueue) != total_jobs):
+        print("Not Complete", len(scheduler.ExitQueue), total_jobs)
+        await asyncio.sleep(0.5)
+
+    print("done")
+    return True
 
 class scheduler:
     def __init__(self, schedulerId):
@@ -57,8 +67,9 @@ class scheduler:
             print("Simple Hash - index:", node_index)
             return self.node_list[node_index]
 
+        print("last_node_index", self.last_node_index)
         node_index = round_robin_policy(self.last_node_index, self.node_list)
-        if node_index != -1:
+        if node_index != -2:
             print("round robin - index:", node_index)
             if hash_policy_active:
                 if len(self.fileHashes) >= self.max_hash_entries:
@@ -66,11 +77,15 @@ class scheduler:
                     (k := next(iter(self.fileHashes)), self.fileHashes.pop(k))
 
                 self.fileHashes[job.file_id] = node_index
-            self.last_node_index+=1
+            self.last_node_index=node_index+1
             return self.node_list[node_index]
 
         return -1
 
+    
+
+
+      
         
        
 
