@@ -1,7 +1,6 @@
-from job import job
-from compute_node import compute_node
-from scheduler import scheduler
-from scheduler import check_jobs_completed
+from job import Job
+from compute_node import Node
+from scheduler import Scheduler
 
 import asyncio
 
@@ -12,9 +11,9 @@ def test_compute():
     file_id = "f1"
     file_name = "file_name_1"
     file_size = 200
-    job1=job(job_id, file_id, file_name, file_size)
+    job1=job(job_id, file_id, file_name, file_size, 0)
 
-    job2=job("j2", file_id, file_name, file_size)
+    job2=job("j2", file_id, file_name, file_size, 5)
 
 
     nodeid = "node1"
@@ -53,38 +52,41 @@ def test_scheduler():
 
 
 def test_scheduler_compute():
+    ##Setup simulation
+    #Create scheduler
+    schedulerObj = Scheduler()
 
-    file_id = "f1"
-    file_name = "file_name_1"
-    file_size = 200
-
-    scheduler1 = scheduler("sch1")
-
+    #Create nodes
     no_of_nodes = 3
-    for i in range(0, no_of_nodes):
-        node1 = compute_node("n"+str(i))
-        scheduler1.add_node(node1)
+    for i in range(no_of_nodes):
+        node = Node("n"+str(i), 0)
+        schedulerObj.add_node(node)
+
+    #Create jobs
+    no_of_jobs=3
+    for i in range(no_of_jobs):
+        temp_job = Job("j"+str(i), "f"+str(i), 200, 1000, i*5000) #Job id, file id, file_size, compute_time, start_time
+        schedulerObj.add_job(temp_job)
 
 
-    no_of_jobs=15
+    ##Run the simulation
+    """
+    First scheduler assigns jobs to all the nodes.
+    A special case on node failure, Failure is a special job that stops a node. Failures in granularity of jobs 
+    """
+    #Scheduler
+    schedulerObj.Run()
+    #Run node(s)
+    for node in schedulerObj.NodeList:
+        node.Run()
 
-    k=0
-    for i in range(0, no_of_jobs):
-        if i >10:
-            k=0
+    ##Collect results
+    time = -1
+    for node in schedulerObj.NodeList:
+        if time < node.local_time:
+            time = node.local_time
+            
 
-        temp_job=job("j"+str(i), "f"+str(k), file_name, file_size)
-        scheduler1.enqueue_job(1, temp_job)
-
-        node = scheduler1.select_node(temp_job)
-
-        node.enqueue_job(temp_job, scheduler1)
-
-
-        k+=1
-
-    asyncio.run(check_jobs_completed(scheduler1, no_of_jobs))
-
-
+    print("Time taken to complete (ms) : ", time)    
 
 test_scheduler_compute()

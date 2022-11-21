@@ -1,57 +1,38 @@
-from cache import cache
-from job import job
-import asyncio
+from cache import Cache
 
-class compute_node():
-    def __init__(self, node_id):
+class Node:
+    def __init__(self, node_id, Stime):
+        #Passed as args
         self.node_id = node_id
+        self.local_time = Stime
+
+        #Init
         self.JobQ = []
-        self.cache = cache(node_id)
-        self.local_cache = self.cache.cache_store
-        self.node_busy = False
-        self.queue_busy = False
+        self.local_cache = Cache(node_id)
 
         #Add this to config file
-        self.constant_compute_time = 500
-        self.constant_cache_retrieval_time = 200
         self.constant_s3_storage_retrieval_time = 1000
 
-
-    def enqueue_job(self, job, scheduler1):
+    def add_job(self, job):
         self.JobQ.append(job)
-        if not self.queue_busy:
-            self.compute_from_queue(scheduler1)
-    
-    def dequeue_job(self):
-        job = self.JobQ[0]
-        del self.JobQ[0]
-        job.queue_time = self.time.get_curr_ts() - job.start_time
-        return job
         
-    def compute_from_queue(self, scheduler):
-        if len(self.JobQ) > 0:
-            self.queue_busy = True
-            job = self.dequeue_job()
-            asyncio.run(self.compute(job, scheduler))
+    def compute(self, job):
+        timeTaken = job.start_time
 
-        if len(self.JobQ) > 0:
-            self.compute_from_queue()
+        job.add_time("compute_time", job.compute_time)
+        timeTaken += job.compute_time
+
+        if self.local_cache.check(job.file_id):
+            timeTaken += self.local_cache.cache_retrieval_time
+            job.add_time("cpu_cache_time", self.local_cache.cache_retrieval_time)
         else:
-            self.queue_busy = False
-    
-    async def compute(self, job, scheduler1):
-        self.node_busy = True
-        job.add_time("compute_time", self.constant_compute_time)
-        await asyncio.sleep(0.5) #Test line
-        
-        #Check cache
-        if job.file_id in self.local_cache:
-            job.add_time("cpu_cache_time",self.constant_cache_retrieval_time)
-        else:
-            self.local_cache.append(job.file_id)
-            job.add_time("storage_time",self.constant_s3_storage_retrieval_time) 
-        
-        self.node_busy = False
-        scheduler1.enqueue_job(0, job) #Add to ack jobs
-        
-        return job
+            self.local_cache.add(job.file_id)
+            timeTaken += self.constant_s3_storage_retrieval_time
+            job.add_time("storage_time", self.constant_s3_storage_retrieval_time)
+
+        return timeTaken
+
+    def Run(self):
+        for job in self.JobQ:
+            timeTaken = self.compute(job)
+            self.local_time += timeTaken

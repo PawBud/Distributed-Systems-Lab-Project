@@ -1,7 +1,5 @@
-import asyncio
-
+"""
 hash_policy_active = False
-
 def simple_file_hash_policy(fileHashes, job):
         for file_id in fileHashes:
             if file_id == job.file_id:
@@ -15,57 +13,31 @@ def round_robin_policy(last_node_index, node_list):
         last_node_index = 0
 
     return last_node_index
+"""
 
-async def check_jobs_completed(scheduler, total_jobs):
-    while(len(scheduler.ExitQueue) != total_jobs):
-        print("Not Complete", len(scheduler.ExitQueue), total_jobs)
-        await asyncio.sleep(0.5)
-
-    print("done")
-    return True
-
-class scheduler:
-    def __init__(self, schedulerId):
-        self.scheduler_id = schedulerId
-        self.EntryQueue = []
-        self.ExitQueue = []
-        self.fileHashes = {}
-        self.node_list = []
-        self.last_node_index = 0
-
-        self.max_hash_entries = 10
+class Scheduler:
+    def __init__(self):
+        self.JobQ = []
+        #self.fileHashes = {}
+        self.NodeList = []
+        self.ActiveNodesList = []
+        self.curr_node = 0
+        #self.last_node_index = 0
+        #self.max_hash_entries = 10
 
     def add_node(self, node):
-        self.node_list.append(node)
-
-    def enqueue_job(self, queue_type, job):
-
-        if queue_type == 1:
-            self.EntryQueue.append(job)
-        else:
-            self.ExitQueue.append(job)
-
+        self.NodeList.append(node)
     
-    def dequeue_job(self, queue_type):
-        #FIXME: Should add queue time!
-        job
-        if queue_type == 1:
-            job = self.EntryQueue[0]
-            del self.EntryQueue[0]
-        else:
-            job = self.ExitQueue[0]
-            del self.ExitQueue[0]
-        return job
+    def add_job(self, job):
+        self.JobQ.append(job)
 
-    
-    
     def select_node(self, job):
-
         #Simple File hash Policy that checks if a file_id has an entry
+        """
         node_index = simple_file_hash_policy(self.fileHashes, job)
         if node_index != -1:
             print("Simple Hash - index:", node_index)
-            return self.node_list[node_index]
+            return self.NodeList[node_index]
 
         print("last_node_index", self.last_node_index)
         node_index = round_robin_policy(self.last_node_index, self.node_list)
@@ -78,9 +50,26 @@ class scheduler:
 
                 self.fileHashes[job.file_id] = node_index
             self.last_node_index=node_index+1
-            return self.node_list[node_index]
+            return self.NodeList[node_index]
+        """
+        #Round robin
+        node = self.NodeList[self.curr_node]
+        self.curr_node = (self.curr_node + 1)%len(self.NodeList)
+        return node
 
-        return -1
+    def Run(self):
+        self.ActiveNodesList = self.NodeList[:]
+        for job in self.JobQ:
+            #check if special job(Failure)
+            if job.special:
+                pass
+                
+            #Get node for the job
+            node = self.select_node(job)
+            #Append to jobQ of the node
+            node.add_job(job)
+
+
 
     
 
