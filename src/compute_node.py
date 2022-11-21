@@ -17,7 +17,7 @@ class Node:
         self.JobQ.append(job)
         
     def compute(self, job):
-        timeTaken = job.start_time
+        timeTaken = 0
 
         job.add_time("compute_time", job.compute_time)
         timeTaken += job.compute_time
@@ -35,4 +35,6 @@ class Node:
     def Run(self):
         for job in self.JobQ:
             timeTaken = self.compute(job)
+            if job.start_time > self.local_time:
+                self.local_time = job.start_time
             self.local_time += timeTaken

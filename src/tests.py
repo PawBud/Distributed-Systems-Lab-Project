@@ -2,10 +2,8 @@ from job import Job
 from compute_node import Node
 from scheduler import Scheduler
 
-import asyncio
 
-
-
+#All time reference are in ms
 def test_compute():
     job_id = "j1"
     file_id = "f1"
@@ -52,6 +50,7 @@ def test_scheduler():
 
 
 def test_scheduler_compute():
+
     ##Setup simulation
     #Create scheduler
     schedulerObj = Scheduler()
@@ -65,7 +64,7 @@ def test_scheduler_compute():
     #Create jobs
     no_of_jobs=3
     for i in range(no_of_jobs):
-        temp_job = Job("j"+str(i), "f"+str(i), 200, 1000, i*5000) #Job id, file id, file_size, compute_time, start_time
+        temp_job = Job("j"+str(i), "f"+str(i), 200, 1000, 0) #Job id, file id, file_size, compute_time, start_time
         schedulerObj.add_job(temp_job)
 
 
