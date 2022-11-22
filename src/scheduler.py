@@ -20,7 +20,6 @@ class Scheduler:
         self.JobQ = []
         #self.fileHashes = {}
         self.NodeList = []
-        self.ActiveNodesList = []
         self.curr_node = 0
         #self.last_node_index = 0
         #self.max_hash_entries = 10
@@ -58,12 +57,11 @@ class Scheduler:
         return node
 
     def Run(self):
-        self.ActiveNodesList = self.NodeList[:]
         for job in self.JobQ:
             #check if special job(Failure)
             if job.special:
                 pass
-                
+
             #Get node for the job
             node = self.select_node(job)
             #Append to jobQ of the node

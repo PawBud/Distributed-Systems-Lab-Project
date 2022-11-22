@@ -64,7 +64,7 @@ def test_scheduler_compute():
     #Create jobs
     no_of_jobs=3
     for i in range(no_of_jobs):
-        temp_job = Job("j"+str(i), "f"+str(i), 200, 1000, 0) #Job id, file id, file_size, compute_time, start_time
+        temp_job = Job("j"+str(i), "f"+str(i), 200, 1000, 1000*i) #Job id, file id, file_size, job_compute_time, job_start_time
         schedulerObj.add_job(temp_job)
 
 
@@ -88,4 +88,16 @@ def test_scheduler_compute():
 
     print("Time taken to complete (ms) : ", time)    
 
+
+"""
+Changes needed:
+1. Different hash algorithms 
+2. Cache implmentation
+3. Storage implmentaion to accomdate size based and dynamic latency
+4. Add support to get metrics 
+5. Accomdate traces.
+6. Support for failures and restart
+7. Queue limiting scheduling policy (Opt)
+8. Process with core granularity (Opt)
+"""
 test_scheduler_compute()
