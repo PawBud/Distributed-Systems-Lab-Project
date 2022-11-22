@@ -4,6 +4,7 @@ from scheduler import Scheduler
 
 
 #All time reference are in ms
+"""
 def test_compute():
     job_id = "j1"
     file_id = "f1"
@@ -47,7 +48,7 @@ def test_scheduler():
     node_index = scheduler1.select_node(job1)
     node_index2 = scheduler1.select_node(job2)
     print("node-index", node_index, node_index2)
-
+"""
 
 def test_scheduler_compute():
 
@@ -100,4 +101,5 @@ Changes needed:
 7. Queue limiting scheduling policy (Opt)
 8. Process with core granularity (Opt)
 """
+##Main func
 test_scheduler_compute()
