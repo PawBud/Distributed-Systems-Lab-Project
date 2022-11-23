@@ -62,10 +62,15 @@ def test_scheduler_compute():
         node = Node("n"+str(i), 0)
         schedulerObj.add_node(node)
 
+    #creating a copy of the node list
+    schedulerObj.RunningNodes = schedulerObj.NodeList[:]
+
     #Create jobs
     no_of_jobs=3
     for i in range(no_of_jobs):
-        temp_job = Job("j"+str(i), "f"+str(i), 200, 1000, 1000*i) #Job id, file id, file_size, job_compute_time, job_start_time
+        temp_job = Job("j"+str(i), "f"+str(i), 200, 1000, 1000*i, None) #Job id, file id, file_size, job_compute_time, job_start_time, job_specail
+        if i == 2:
+            temp_job = Job("j"+str(i), "f"+str(i), 200, 1000, 1000*i, "n1")
         schedulerObj.add_job(temp_job)
 
 

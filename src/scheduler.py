@@ -20,6 +20,7 @@ class Scheduler:
         self.JobQ = []
         #self.fileHashes = {}
         self.NodeList = []
+        self.RunningNodes = []
         self.curr_node = 0
         #self.last_node_index = 0
         #self.max_hash_entries = 10
@@ -52,18 +53,24 @@ class Scheduler:
             return self.NodeList[node_index]
         """
         #Round robin
-        node = self.NodeList[self.curr_node]
-        self.curr_node = (self.curr_node + 1)%len(self.NodeList)
+        node = self.RunningNodes[self.curr_node]
+        self.curr_node = (self.curr_node + 1)%len(self.RunningNodes)
         return node
 
     def Run(self):
         for job in self.JobQ:
-            #check if special job(Failure)
-            if job.special:
-                pass
-
+            
             #Get node for the job
             node = self.select_node(job)
+
+            #check if special job(Failure)
+            if job.special != None:
+                for node in self.RunningNodes:
+                    if node.node_id == job.special:
+                        print("removed node id", node.node_id)
+                        self.RunningNodes.remove(node)
+                        continue
+
             #Append to jobQ of the node
             node.add_job(job)
 
