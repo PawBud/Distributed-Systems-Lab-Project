@@ -1,6 +1,6 @@
 #Contains charactestic of a job like
 class Job:
-    def __init__(self, jobId, fileId, fileSize, compute_time, Stime, node_id):
+    def __init__(self, jobId, fileId, fileSize, compute_time, Stime, node_id  = None):
         self.job_id = jobId
         self.file_id = fileId
         self.file_size = fileSize

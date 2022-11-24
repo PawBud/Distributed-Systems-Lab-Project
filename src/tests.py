@@ -68,7 +68,11 @@ def test_scheduler_compute():
     #Create jobs
     no_of_jobs=3
     for i in range(no_of_jobs):
-        temp_job = Job("j"+str(i), "f"+str(i), 200, 1000, 1000*i, None) #Job id, file id, file_size, job_compute_time, job_start_time, job_specail
+        temp_job = Job("j"+str(i), "f"+str(i), 200, 1000, 1000*i) #Job id, file id, file_size, job_compute_time, job_start_time
+        #Inclusion of failure job, set check to -1 if dont want failures
+        """
+        Failing is done on job granularity, For now, we cant fail a node inbetween job execution
+        """
         if i == 2:
             temp_job = Job("j"+str(i), "f"+str(i), 200, 1000, 1000*i, "n1")
         schedulerObj.add_job(temp_job)
@@ -102,9 +106,10 @@ Changes needed:
 3. Storage implmentaion to accomdate size based and dynamic latency
 4. Add support to get metrics 
 5. Accomdate traces.
-6. Support for failures and restart
-7. Queue limiting scheduling policy (Opt)
-8. Process with core granularity (Opt)
+6. Support for failures (Done)
+7. Support for restarts
+8. Queue limiting scheduling policy (Opt)
+9. Process with core granularity (Opt)
 """
 ##Main func
 test_scheduler_compute()
