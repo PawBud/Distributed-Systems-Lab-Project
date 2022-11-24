@@ -115,10 +115,10 @@ def test_scheduler_compute():
 """
 Changes needed:
 1. Different hash algorithms 
-2. Cache implmentation
+2. Cache implmentation (Done)
 3. Storage implmentaion to accomdate size based and dynamic latency
 4. Add support to get metrics 
-5. Accomdate traces.
+5. Accomdate traces. (PDone)
 6. Support for failures (Done)
 7. Support for restarts
 8. Queue limiting scheduling policy (Opt)

@@ -1,12 +1,3 @@
-
-def read_trace_file(path):
-    f = open(path, "r")
-    file_content = f.read()
-
-    trace_list = file_content.split("\n")
-    return trace_list
-
-
 class Trace:
     def __init__(self, traceId, startTime, reqType, fileId, fileSize, lookStart, lookEnd):
         self.trace_id = traceId
@@ -17,8 +8,16 @@ class Trace:
         self.lookup_start = lookStart
         self.lookup_end = lookEnd
 
-def create_trace_objects():
-    trace_list = read_trace_file("IBMtraces/IBMObjectStoreSample")
+
+def read_trace_file(path):
+    f = open(path, "r")
+    file_content = f.read()
+
+    trace_list = file_content.split("\n")
+    return trace_list
+    
+def create_trace_objects(path):
+    trace_list = read_trace_file(path)
     traceObjs = []
     for trace in trace_list:
         trace_info = trace.split(" ")
@@ -36,6 +35,4 @@ def create_trace_objects():
             temptraceObj = Trace("t"+str(len(traceObjs)), startTime, reqType, fileId, fileSize, lookStart, lookEnd)
             traceObjs.append(temptraceObj)
 
-            print(temptraceObj.lookup_start)
-
-create_trace_objects()
+    return traceObjs
