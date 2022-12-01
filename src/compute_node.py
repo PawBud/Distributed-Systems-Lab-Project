@@ -5,8 +5,10 @@ class Node:
         #Passed as args
         self.node_id = nodeID
         self.local_time = startTime
+       
 
         #Init
+        self.JobCount = 0
         self.JobQ = []
         self.local_cache = cacheObj
 
@@ -28,7 +30,7 @@ class Node:
             if self.local_cache.check(job.file_id, job.file_size):
                 #Cache hit
                 timeTaken += self.local_cache.retrieval_time
-                job.add_time("cpu_cache_time", self.local_cache.retrieval_time)
+                job.add_time("cache_time", self.local_cache.retrieval_time)
             else:
                 #Cache miss
                 self.local_cache.add(job.file_id, job.file_size)
@@ -49,3 +51,5 @@ class Node:
             if job.start_time > self.local_time:
                 self.local_time = job.start_time
             self.local_time += timeTaken
+            job.cumilative_time["end"] = self.local_time
+            self.JobCount += 1

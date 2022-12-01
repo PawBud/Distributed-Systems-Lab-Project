@@ -9,6 +9,7 @@ class Job:
         
         self.special = node_id
         self.cumilative_time = {}
+        self.cumilative_time["start"] = Stime
         self.end_time = -1
 
     def add_time(self, task_name, time):

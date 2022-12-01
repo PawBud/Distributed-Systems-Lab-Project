@@ -3,7 +3,6 @@ from compute_node import Node
 from scheduler import Scheduler
 from storage import StorageSystem
 from cache import Cache
-
 #All time reference are in ms
 """
 def test_compute():
@@ -55,17 +54,35 @@ def test_scheduler():
 Times are in ms
 Size are in bytes
 """
+NodeList = []
+Failure_probability = 0
+switch = False
+def random_failure_sampler():
+    #When called return node to fail probabilstically
+    global switch
+    if not switch:
+        return None
+    switch = False
+    return "n2"
+
+
 def test_scheduler_compute():
     ##Simulation parameters:
-    no_of_nodes = 5
-    no_of_jobs = 10
+    no_of_nodes = 100
+    no_of_jobs = 4000
 
     ##Setup simulation
     #Create storage unit
-    storageObj = StorageSystem(1000) #Retrieval time
+    storageObj = StorageSystem(1000) #Retrieval time(1000ms)
 
     #Create scheduler
-    schedulerObj = Scheduler()
+    """
+    Cheat sheet for hashing algorithms
+    RR : Round robin
+    RH : Ring hash
+    MH : Mangalev
+    """
+    schedulerObj = Scheduler("RH")
 
     #Create nodes
     for i in range(no_of_nodes):
@@ -78,14 +95,16 @@ def test_scheduler_compute():
 
     #Create jobs
     for i in range(no_of_jobs):
-        temp_job = Job("j"+str(i), "f"+str(0), 10*(1024**3), 60*(10**3), 0) #Job id, file id, file_size, job_compute_time, job_start_time
+        temp_job = Job("j"+str(i), "f"+str(1), 10*(1024**3), 60*(10**3), 0) #Job id, file_id, file_size, job_compute_time, job_start_time
        
         #Inclusion of failure job, set check to -1 if dont want failures
         """
         Failing is done on job granularity, For now, we cant fail a node inbetween job execution
         """
-        if i == -1:
-            temp_job = Job("failure", "failure", 0, 0, 0, "n1")
+        #TODO: Random failure of nodes
+        node_to_fail = random_failure_sampler()
+        if node_to_fail:
+            temp_job = Job("failure", "failure", 0, 0, 0, node_to_fail)
         
         #Add job to schedulerQueue
         schedulerObj.add_job(temp_job)
@@ -102,24 +121,60 @@ def test_scheduler_compute():
     for node in schedulerObj.NodeList:
         node.Run()
 
-    ##Collect results
-    time = -1
-    for node in schedulerObj.NodeList:
-        if time < node.local_time:
-            time = node.local_time
-            
 
-    print("Time taken to complete (ms) : ", time)    
+    ##Collect results
+    #Run time
+    Total_time = 0
+    for node in schedulerObj.NodeList:
+        if Total_time < node.local_time:
+            Total_time = node.local_time
+    
+    #Load of nodes (Peak to Mean)
+    Total_jobs_reported = 0
+    Node_job_count_list = []
+    for node in schedulerObj.NodeList:
+        Total_jobs_reported += node.JobCount
+        Node_job_count_list.append(node.JobCount)
+    if Total_jobs_reported != no_of_jobs:
+        print("[WARNING!!!] Mismatch job reported", Total_jobs_reported, no_of_jobs)
+
+    #Cache statistics
+    Cache_hit_count = 0
+    Cache_miss_count = 0
+    for node in schedulerObj.NodeList:
+        Cache_hit_count += node.local_cache.cache_hits
+        Cache_miss_count += node.local_cache.cache_miss
+    
+    #Time spent
+    Time_spent_dict = {}
+    Total_TT = 0
+    for job in schedulerObj.JobQ:
+        tt = job.cumilative_time["end"] - job.cumilative_time["start"]
+        for key in job.cumilative_time.keys():
+            if key in ["start", "end"]:
+                continue
+            try:
+                Time_spent_dict[key] += job.cumilative_time[key]
+            except:
+                Time_spent_dict[key] = job.cumilative_time[key]
+        Total_TT += tt
+    Avg_TT = Total_TT / no_of_jobs
+        
+
+    ##Show stats
+    print("Time taken to complete (ms) : ", Total_time)
+    print("Peak to Mean ratio of job load : ", max(Node_job_count_list)/(sum(Node_job_count_list)/len(Node_job_count_list)))
+    print("Cache statistics (hits/miss) : ", Cache_hit_count, Cache_miss_count)
+    print("Avg turn around time : ", Avg_TT)
+    print("Time spent statistics : ", Time_spent_dict)    
 
 
 """
 Changes needed:
-1. Different hash algorithms 
-2. Cache implmentation (Done)
-3. Storage implmentaion to accomdate size based and dynamic latency
-4. Add support to get metrics 
+1. Different hash algorithms [Ring hash (D), Mangelve(D), Rendzvorus]
+4. Add support to get metrics [Peak to mean ratio]
 5. Accomdate traces. (PDone)
-6. Support for failures (Done)
+6. Support for failures from traces
 7. Support for restarts
 8. Queue limiting scheduling policy (Opt)
 9. Process with core granularity (Opt)
