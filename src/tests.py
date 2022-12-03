@@ -8,9 +8,7 @@ from cache import Cache
 Times are in millisec
 Size are in bytes
 """
-NodeList = []
-Failure_probability = 0
-switch = False
+
 
 """
 Accomdating trace
@@ -38,6 +36,9 @@ def get_jobs_from_trace(path):
     return JobList
 
 
+NodeList = []
+Failure_probability = 0
+switch = False
 def random_failure_sampler():
     #When called return node to fail probabilstically
     global switch
