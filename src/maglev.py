@@ -23,7 +23,7 @@ class HashGenerator(object):
 
 class MaglevHash(object):
     def __init__(self, m):
-        self.__m = m or 65537  # prime number for modular
+        self.__m = m  # prime number for modular
         if not self.__is_prime(self.__m):
             raise Exception('invalid prime number')
 

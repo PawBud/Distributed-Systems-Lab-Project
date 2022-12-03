@@ -1,5 +1,5 @@
 from uhashring import HashRing
-#from maglev import MaglevHash
+from maglev import MaglevHash
 from roundRobin import RoundRobin
 
 class HashEngine:
@@ -16,7 +16,7 @@ class HashEngine:
         elif self.Algo == "RH":
             self.HashObj = HashRing()
         elif self.Algo == "MH":
-            self.HashObj = MaglevHash()
+            self.HashObj = MaglevHash(7)
 
         self.RunningNodes = []
         for node in nodes:
