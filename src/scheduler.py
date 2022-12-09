@@ -15,7 +15,6 @@ class Scheduler:
     def select_node(self, job):
         #Get nodeID from hashObj
         nodeId = self.HashObj.lookup(job.file_id)
-        
         #Get node from list
         for node in self.NodeList:
             if node.node_id == nodeId:

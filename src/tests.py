@@ -3,7 +3,9 @@ from compute_node import Node
 from scheduler import Scheduler
 from storage import StorageSystem
 from cache import Cache
-
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 """
 Times are in millisec
 Size are in bytes
@@ -23,16 +25,27 @@ def get_jobs_from_trace(path):
     trace_list = f.readlines()
     JobList = []
     initTime = int(trace_list[0].split(" ")[0]) #Get start time of first and subtract it
+    n = len(trace_list)  # sample size
+    mu = 500  # mean
+    sigma = 10  # sd
+    a = np.random.normal(mu,sigma,n)
+    sns.displot(a, kind="ecdf") #Distribution over
+    plt.show()
+    i = 0
     for trace in trace_list:
         trace_info = trace.split(" ")
-        if len(trace_info) > 1:
-            startTime = (int(trace_info[0]) - initTime) * 10**3 #Sec to MilliSec
+        if len(trace_info) >= 4:
+            startTime = (int(trace_info[0]) - initTime)#Init trace as 0
             fileId = trace_info[2]
             fileSize = int(trace_info[3]) 
             #TODO:Sample computation_time from distribution
-            compute_time = 50 * 1000 #50 seconds
+            compute_time = int(a[i])
             tempObj = Job("j"+str(len(JobList)), fileId, fileSize, compute_time, startTime)
             JobList.append(tempObj)
+            if len(JobList)==-1:
+                temp_job = Job("failure", "failure", 0, 0, 0, "n0")
+                JobList.append(temp_job)
+            i += 1
     return JobList
 
 
@@ -46,7 +59,6 @@ def random_failure_sampler():
         return None
     switch = False
     return "n2"
-
 
 
 def print_results(schedulerObj, no_of_jobs):
@@ -69,10 +81,15 @@ def print_results(schedulerObj, no_of_jobs):
     #Cache statistics
     Cache_hit_count = 0
     Cache_miss_count = 0
+    node_list = []
+    cache_hit_list = []
+    cache_miss_list = []
     for node in schedulerObj.NodeList:
         Cache_hit_count += node.local_cache.cache_hits
         Cache_miss_count += node.local_cache.cache_miss
-    
+        node_list.append(node.node_id)
+        cache_hit_list.append(node.local_cache.cache_hits)
+        cache_miss_list.append(node.local_cache.cache_miss)
     #Time spent
     Time_spent_dict = {}
     Total_TT = 0
@@ -91,10 +108,30 @@ def print_results(schedulerObj, no_of_jobs):
 
     ##Show stats
     print("Time taken to complete (ms) : ", Total_time)
-    print("Peak to Mean ratio of job load : ", max(Node_job_count_list)/(sum(Node_job_count_list)/len(Node_job_count_list)))
+    print("Peak to Mean ratio of job load : ", Node_job_count_list ,max(Node_job_count_list)/(sum(Node_job_count_list)/len(Node_job_count_list)))
     print("Cache statistics (hits/miss) : ", Cache_hit_count, Cache_miss_count)
     print("Avg turn around time : ", Avg_TT)
-    print("Time spent statistics : ", Time_spent_dict)  
+    print("Time spent statistics : ", Time_spent_dict)
+
+    #Utlization graph
+    figure, axis = plt.subplots(len(schedulerObj.NodeList), 1)
+    c = 0
+    for i in schedulerObj.NodeList:
+        graph = i.utlization_graph
+        x=[]
+        y=[]
+        for i in graph.keys():
+            x.extend([j for j in range(i[0],i[1])])
+            y.extend([graph[i] for j in range(i[0],i[1])])
+        axis[c].plot(x,y)
+        axis[c].set_xlim(0,Total_time)
+        c +=  1
+    plt.show()
+
+    #Cache statistics graph
+    plt.bar(node_list, cache_hit_list, color='b')
+    plt.bar(node_list, cache_miss_list, color='orange')
+    plt.show()
 
 def test_case_1(no_of_nodes, no_of_jobs, algo):
     ##Setup simulation
@@ -121,9 +158,9 @@ def test_case_1(no_of_nodes, no_of_jobs, algo):
         Failing is done on job granularity, For now, we cant fail a node inbetween job execution
         """
         #TODO: Random failure of nodes
-        node_to_fail = random_failure_sampler()
-        if node_to_fail:
-            temp_job = Job("failure", "failure", 0, 0, 0, node_to_fail)
+        #node_to_fail = random_failure_sampler()
+        if i==-1:
+            temp_job = Job("failure", "failure", 0, 0, 0, "n0")
         
         #Add job to schedulerQueue
         schedulerObj.add_job(temp_job)
@@ -184,7 +221,7 @@ def test_case_2(no_of_nodes, path, algo):
 """
 Changes needed:
 1. Different hash algorithms [Ring hash (D), Maglev(D)]
-2. Add support to get metrics [Peak to mean ratio] (D)
+2. Add support to get metrics [Peak to mean ratio, Cache hit ratio] (D)
 3. Accomdate traces (D)
 4. Support for failures from traces
 """
@@ -194,9 +231,17 @@ Cheat sheet for hashing algorithms
 RR : Round robin
 RH : Ring hash
 MH : Maglev
-
+AH : Anchor hash
+RZ : redz 
+BS : Bloom filter based (Addition to other class)
 Test cases:
 test_case_1(no_of_nodes, no_of_jobs, algo) #Random job creation
 """
-
-test_case_2(100, "Traces/Trace1", "RH")
+"""
+List of experiments:
+1. Peak to mean ratio (Overprovisioning)
+2. Rebalancing [No of objects moved, increase in job response time, Time to steady state]
+3. Same experiment failures
+4. Simulated jobs with same file as input
+"""
+test_case_2(2, "Traces/Trace1", "RH")

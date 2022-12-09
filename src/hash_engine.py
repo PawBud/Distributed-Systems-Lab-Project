@@ -1,6 +1,7 @@
 from uhashring import HashRing
 from maglev import MaglevHash
 from roundRobin import RoundRobin
+#from anchor import AnchorHash
 
 class HashEngine:
     def __init__(self, algo, nodes):
@@ -17,6 +18,8 @@ class HashEngine:
             self.HashObj = HashRing()
         elif self.Algo == "MH":
             self.HashObj = MaglevHash(7)
+        #elif self.Algo == "AH":
+        #    self.HashObj = AnchorHash()
 
         self.RunningNodes = []
         for node in nodes:
