@@ -114,6 +114,7 @@ def print_results(schedulerObj, no_of_jobs):
     print("Time spent statistics : ", Time_spent_dict)
 
     #Utlization graph
+    """
     figure, axis = plt.subplots(len(schedulerObj.NodeList), 1)
     c = 0
     for i in schedulerObj.NodeList:
@@ -125,6 +126,13 @@ def print_results(schedulerObj, no_of_jobs):
             y.extend([graph[i] for j in range(i[0],i[1])])
         axis[c].plot(x,y)
         axis[c].set_xlim(0,Total_time)
+        c +=  1
+    plt.show()
+    """
+    figure, axis = plt.subplots(3, 1)#len(schedulerObj.NodeList)
+    c = 0
+    for i in schedulerObj.NodeList[:3]:
+        axis[c].plot(i.utlization_graph_x,i.utlization_graph_y)
         c +=  1
     plt.show()
 
@@ -244,4 +252,4 @@ List of experiments:
 3. Same experiment failures
 4. Simulated jobs with same file as input
 """
-test_case_2(2, "Traces/Trace1", "RH")
+test_case_2(3, "Traces/Trace1", "RH")
