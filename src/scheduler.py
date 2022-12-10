@@ -6,8 +6,8 @@ class Scheduler:
         self.NodeList = []
         self.Algo = algo
 
-    def add_node(self, node):
-        self.NodeList.append(node)
+    def GenHash(self):
+        self.HashObj = HashEngine(self.Algo, self.NodeList)
     
     def add_job(self, job):
         self.JobQ.append(job)
@@ -20,7 +20,7 @@ class Scheduler:
             if node.node_id == nodeId:
                 return node
 
-
+    """
     def Run(self):
         #Init hash obj
         self.HashObj = HashEngine(self.Algo, self.NodeList)
@@ -40,6 +40,23 @@ class Scheduler:
             node = self.select_node(job)
             #Append to jobQ of the node
             node.add_job(job)
+    
+    """
+    
+    def Tick(self):
+        for job in self.JobQ:
+            #Special job
+            if job.special != None:
+                for node in self.NodeList:
+                    if node.node_id == job.special:
+                        print("removed node id", node.node_id)
+                        self.HashObj.removeNode(node.node_id)
+                        continue
+            #Get node for the job
+            node = self.select_node(job)
+            #Append to jobQ of the node
+            node.add_job(job)
+            self.JobQ.remove(job)
 
 
 

@@ -6,11 +6,12 @@ class Job:
         self.file_size = fileSize
         self.compute_time = compute_time
         self.start_time = Stime
-        
-        self.special = node_id
-        self.cumilative_time = {}
-        self.cumilative_time["start"] = Stime
-        self.end_time = -1
 
-    def add_time(self, task_name, time):
-        self.cumilative_time[task_name] = time
+        #In case of failure, check if needed
+        self.special = node_id
+        
+        self.served_compute_time = 0
+        self.in_storage = False
+        self.allocated_storage_time = 0
+        self.served_storage_time = 0
+        self.end_time = -1

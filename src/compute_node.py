@@ -1,114 +1,95 @@
 from cache import Cache
 
 class Node:
-    def __init__(self, nodeID, startTime, storageObj, cacheObj = None, numCores = 1):
+    def __init__(self, nodeID, startTime, storageObj, EventHandlerObj, cacheObj = None, numCores = 1):
         #Passed as args
         self.node_id = nodeID
         self.local_time = startTime
         self.numCores = numCores
 
         #Init
-        self.JobCount = 0
-        self.JobQ = []
+        self.jobQ = []
         self.local_cache = cacheObj
-        self.utl_buffer = 0
-        self.utlization_graph = {}
-
-        #Yet to use
-        self.utlization_aggr = 10**3 * 60 #One minute
-        self.utlization_ptr = [0,0] #0->Indicates ms spawned from prev minute, 1->Indicates utlization of this minute so far
-        self.utlization_graph_x = [] #Have minute scale
-        self.utlization_graph_y = [] #Have total utlization in that minute, i.e compute done throughout the time.
+        self.Failed = False
+        self.current_ms_utlization = 0
+        #For graphing
+        self.current_minute_utlization = 0
+        self.utl_aggr = 10**3 * 60
+        self.utlization_graph = [] #Over a minute
 
         #Add this to config file
         self.storage = storageObj
+        self.EventHandlerObj = EventHandlerObj
 
     def add_job(self, job):
-        self.JobQ.append(job)
+        self.jobQ.append(job)
         
-    def compute(self, job):
-        timeTaken = 0
-
-        job.add_time("compute_time", job.compute_time)
-        timeTaken += job.compute_time
-        
+    def query_storage(self, job):
         #Cache check
         if self.local_cache is not None:
             #Check if present in cache if not add element to cache
             if self.local_cache.check(job.file_id, job.file_size):
                 #Cache hit
-                timeTaken += self.local_cache.retrieval_time
-                job.add_time("cache_time", self.local_cache.retrieval_time)
+                job.allocated_storage_time = self.local_cache.retrieval_time
             else:
                 #Cache miss
                 self.local_cache.add(job.file_id, job.file_size)
-                timeTaken += self.storage.get_retrieval_time(job.file_size)
-                job.add_time("storage_time", self.storage.get_retrieval_time(job.file_size))
+                job.allocated_storage_time = self.storage.get_retrieval_time(job)
         else:
             #No cache
-            timeTaken += self.storage.get_retrieval_time(job.file_size)
-            job.add_time("storage_time", self.storage.get_retrieval_time(job.file_size))
+            job.allocated_storage_time = self.storage.get_retrieval_time(job)
 
-        return timeTaken
+        job.in_storage = True
+    
+    def failure_flush(self):
+        for job in self.jobQ:
+            job.allocated_storage_time = 0
+            job.served_storage_time = 0
+            job.serverd_compute_time = 0
+            job.in_storage = False
+            self.EventHandlerObj.FailedJob(job)
+            self.jobQ.remove(job)
 
-    #Check end time bound
-    def add_utlization(self, factor, start_time, end_time):
-        #self.utlization_graph[(start_time,end_time)] = factor
-        #Adding new
-        #Check if start_time is in the choosen intervel
-        #If not append the utl_ptr to graph; close the aggr
-        #If so, 
-            #Find if the given bound is with choosen minute, then change the ptr
-            #If bound goes beyond, close the choosen minute by additing 
-        lower_given_aggr = start_time // self.utlization_aggr
-        choose_aggr = self.utlization_ptr[0] // self.utlization_aggr
-        if lower_given_aggr > choose_aggr:
-            self.utlization_graph_x.append(choose_aggr) #Utlization of [i,j) will be appended as ith minute
-            self.utlization_graph_y.append(self.utlization_ptr[1]/self.utlization_aggr)
-            if self.utlization_ptr[1] < 0:
-                print("1 : ",self.utlization_ptr[1])
-            choose_aggr += 1
+    def Tick(self):
+        #Set current utlization to zero
+        self.current_ms_utlization = 0
 
-            #Change utlization ptr
-            self.utlization_ptr[0] = start_time
-            self.utlization_ptr[1] = 0
+        #If mark failed, push all jobs to schduler queue
+        if self.Failed:
+            self.failure_flush()
+            return
 
-        upper_given_aggr = end_time // self.utlization_aggr
-        if upper_given_aggr == choose_aggr:
-            #Within choosen bound
-            self.utlization_ptr[1] += (end_time - start_time) 
-            self.utlization_ptr[0] = end_time
-        else:
-            #Add choosen aggr to graph
-            choosen_aggr_end_time = ((choose_aggr+1)*self.utlization_aggr) - 1
-            self.utlization_ptr[1] += choosen_aggr_end_time - start_time
-            self.utlization_graph_x.append(choose_aggr) #Utlization of [i,j) will be appended as ith minute
-            self.utlization_graph_y.append(self.utlization_ptr[1]/self.utlization_aggr)
-            if self.utlization_ptr[1] < 0:
-                print("2 : ",self.utlization_ptr[1],choosen_aggr_end_time, start_time, choose_aggr, upper_given_aggr, lower_given_aggr)
-            choose_aggr += 1
-            """
-            while choose_aggr == upper_given_aggr:
-                self.utlization_graph_x.append(choose_aggr)
-                self.utlization_graph_y.append(1)
-            """
-            choosen_aggr_end_time = (choose_aggr) * self.utlization_aggr - 1
-            self.utlization_ptr[0] = end_time
-            self.utlization_ptr[1] = (end_time - choosen_aggr_end_time) 
+        for job in self.jobQ:
+            #Check job state
+            #If under storage, continue
+            if job.in_storage:
+                job.served_storage_time += 1
+                if job.served_storage_time == job.allocated_storage_time:
+                    job.in_storage = False
+                continue
             
+            #If not, 
+            #Check if node is not completely utlized
+            if self.current_ms_utlization < 1 :
+                #If not allocated storage
+                if job.allocated_storage_time == 0:
+                    self.query_storage(job)
+                #increment computed time of job
+                job.served_compute_time += 1
+                #Increment node utlization
+                self.current_ms_utlization = 1/self.numCores
+            
+                #Check if job is done and push to done queue
+                if job.served_compute_time == job.compute_time:
+                    job.compute_done = True
+                    job.end_time = self.local_time + 1
+                    self.EventHandlerObj.AckJob(job)
+                    self.jobQ.remove(job)
+                    
 
-        
-    def Run(self):
-        #Do compute
-        for job in self.JobQ:
-            #Update local time
-            timeTaken = self.compute(job)
-            if job.start_time > self.local_time:
-                #self.add_utlization(0, self.local_time, job.start_time) #The node was idle till job was issued
-                self.local_time = job.start_time
-
-            self.add_utlization(1/self.numCores, self.local_time, self.local_time+timeTaken) #The job was occupying one core
-
-            self.local_time += timeTaken
-            job.cumilative_time["end"] = self.local_time
-            self.JobCount += 1
+        #Increment local time
+        self.local_time += 1
+        self.current_minute_utlization += self.current_ms_utlization
+        if (self.local_time+1) % self.utl_aggr == 0:
+            self.utlization_graph.append(self.current_minute_utlization / self.utl_aggr)
+            self.current_minute_utlization = 0

@@ -3,6 +3,8 @@ from compute_node import Node
 from scheduler import Scheduler
 from storage import StorageSystem
 from cache import Cache
+from simulator import Simulator
+from EventHandler import EventHandler
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -64,6 +66,7 @@ def random_failure_sampler():
 def print_results(schedulerObj, no_of_jobs):
     ##Collect results
     #Run time
+    """
     Total_time = 0
     for node in schedulerObj.NodeList:
         if Total_time < node.local_time:
@@ -114,7 +117,6 @@ def print_results(schedulerObj, no_of_jobs):
     print("Time spent statistics : ", Time_spent_dict)
 
     #Utlization graph
-    """
     figure, axis = plt.subplots(len(schedulerObj.NodeList), 1)
     c = 0
     for i in schedulerObj.NodeList:
@@ -132,7 +134,7 @@ def print_results(schedulerObj, no_of_jobs):
     figure, axis = plt.subplots(3, 1)#len(schedulerObj.NodeList)
     c = 0
     for i in schedulerObj.NodeList[:3]:
-        axis[c].plot(i.utlization_graph_x,i.utlization_graph_y)
+        axis[c].plot(i.utlization_graph)
         c +=  1
     plt.show()
 
@@ -226,6 +228,61 @@ def test_case_2(no_of_nodes, path, algo):
     ##Print results
     print_results(schedulerObj, len(jobs))
 
+
+
+def test_case_3(no_of_nodes, no_of_jobs, algo):
+    ##Setup simulation
+    Components = []
+
+    #Create EventHandler
+    EH = EventHandler()
+    Components.append(EH)
+
+    #Create scheduler
+    schedulerObj = Scheduler(algo)
+    Components.append(schedulerObj)
+
+    #Create storage unit
+    storageObj = StorageSystem(1000) #Retrieval time(1000ms)
+
+    #Create nodes
+    for i in range(no_of_nodes):
+        cacheObj = Cache("n"+str(i), 256*(1024**3), 200) #NodeId, CacheSize(256GB), RetrievalTime(200ms)
+        node = Node("n"+str(i), 0, storageObj, EH, cacheObj) #NodeId, StartTime, storageObj, cacheObj for node
+        schedulerObj.NodeList.append(node)
+        Components.append(node)
+
+    #creating a copy of the node list
+    schedulerObj.GenHash()
+
+    #Create Simulator
+    EH.Schduler = schedulerObj
+    simObj = Simulator(Components)
+
+    
+    
+    #Create jobs
+    all_jobs=[]
+    for i in range(no_of_jobs):
+        temp_job = Job("j"+str(i), "f"+str(1), 10*(1024**3), 500, 0) #Job id, file_id, file_size, job_compute_time, job_start_time
+        all_jobs.append(temp_job)
+
+    #Add job to schedulerQueue
+    EH.addJobs(all_jobs)
+
+
+    ##Run the simulation
+    """
+    First scheduler assigns jobs to all the nodes.
+    A special case on node failure, Failure is a special job that stops a node. Failures in granularity of jobs 
+    """
+    while not EH.SimulationDone:
+        simObj.Run()
+
+    ##Print results
+    print_results(schedulerObj, no_of_jobs)
+
+
 """
 Changes needed:
 1. Different hash algorithms [Ring hash (D), Maglev(D)]
@@ -252,4 +309,4 @@ List of experiments:
 3. Same experiment failures
 4. Simulated jobs with same file as input
 """
-test_case_2(3, "Traces/Trace1", "RH")
+test_case_3(3, 1000, "RR")
