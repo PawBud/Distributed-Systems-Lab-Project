@@ -63,7 +63,7 @@ def random_failure_sampler():
     return "n2"
 
 
-def print_results(schedulerObj, no_of_jobs):
+def print_results(schedulerObj, no_of_jobs, EH):
     ##Collect results
     #Run time
     """
@@ -131,16 +131,16 @@ def print_results(schedulerObj, no_of_jobs):
         c +=  1
     plt.show()
     """
-    figure, axis = plt.subplots(3, 1)#len(schedulerObj.NodeList)
+    figure, axis = plt.subplots(len(schedulerObj.NodeList), 1)
     c = 0
-    for i in schedulerObj.NodeList[:3]:
+    for i in schedulerObj.NodeList:
         axis[c].plot(i.utlization_graph)
         c +=  1
     plt.show()
 
     #Cache statistics graph
-    plt.bar(node_list, cache_hit_list, color='b')
-    plt.bar(node_list, cache_miss_list, color='orange')
+    #plt.bar(node_list, cache_hit_list, color='b')
+    plt.plot(EH.job_frequency_graph, color='orange')
     plt.show()
 
 def test_case_1(no_of_nodes, no_of_jobs, algo):
@@ -230,7 +230,7 @@ def test_case_2(no_of_nodes, path, algo):
 
 
 
-def test_case_3(no_of_nodes, no_of_jobs, algo):
+def test_case_3(no_of_nodes, path, algo):
     ##Setup simulation
     Components = []
 
@@ -243,7 +243,7 @@ def test_case_3(no_of_nodes, no_of_jobs, algo):
     Components.append(schedulerObj)
 
     #Create storage unit
-    storageObj = StorageSystem(1000) #Retrieval time(1000ms)
+    storageObj = StorageSystem(500) #Retrieval time(1000ms)
 
     #Create nodes
     for i in range(no_of_nodes):
@@ -257,18 +257,14 @@ def test_case_3(no_of_nodes, no_of_jobs, algo):
 
     #Create Simulator
     EH.Schduler = schedulerObj
+    EH.failures = [20*60*10**3,"n4"]
     simObj = Simulator(Components)
-
-    
     
     #Create jobs
-    all_jobs=[]
-    for i in range(no_of_jobs):
-        temp_job = Job("j"+str(i), "f"+str(1), 10*(1024**3), 500, 0) #Job id, file_id, file_size, job_compute_time, job_start_time
-        all_jobs.append(temp_job)
+    jobs = get_jobs_from_trace(path)
 
     #Add job to schedulerQueue
-    EH.addJobs(all_jobs)
+    EH.addJobs(jobs)
 
 
     ##Run the simulation
@@ -280,7 +276,7 @@ def test_case_3(no_of_nodes, no_of_jobs, algo):
         simObj.Run()
 
     ##Print results
-    print_results(schedulerObj, no_of_jobs)
+    print_results(schedulerObj, 0, EH)
 
 
 """
@@ -309,4 +305,4 @@ List of experiments:
 3. Same experiment failures
 4. Simulated jobs with same file as input
 """
-test_case_3(3, 1000, "RR")
+test_case_3(5, "Traces/Trace1", "RH")

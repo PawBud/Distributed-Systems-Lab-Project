@@ -1,7 +1,7 @@
 from cache import Cache
 
 class Node:
-    def __init__(self, nodeID, startTime, storageObj, EventHandlerObj, cacheObj = None, numCores = 1):
+    def __init__(self, nodeID, startTime, storageObj, EventHandlerObj, cacheObj = None, numCores = 4):
         #Passed as args
         self.node_id = nodeID
         self.local_time = startTime
@@ -57,7 +57,6 @@ class Node:
         #If mark failed, push all jobs to schduler queue
         if self.Failed:
             self.failure_flush()
-            return
 
         for job in self.jobQ:
             #Check job state

@@ -46,12 +46,19 @@ class Scheduler:
     def Tick(self):
         for job in self.JobQ:
             #Special job
+            failedJob = False
             if job.special != None:
                 for node in self.NodeList:
                     if node.node_id == job.special:
                         print("removed node id", node.node_id)
+                        node.Failed = True
                         self.HashObj.removeNode(node.node_id)
-                        continue
+                        self.JobQ.remove(job)
+                        failedJob = True
+                        break
+            
+            if failedJob:
+                continue
             #Get node for the job
             node = self.select_node(job)
             #Append to jobQ of the node
