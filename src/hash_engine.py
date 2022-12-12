@@ -1,6 +1,7 @@
 from uhashring import HashRing
 from maglev import MaglevHash
 from roundRobin import RoundRobin
+from rendezvous_hashing import RendezvousHash
 #from anchor import AnchorHash
 
 class HashEngine:
@@ -10,7 +11,8 @@ class HashEngine:
         Hashing Algos
         RR -> Round robin
         RH -> Ring Hash
-        MH -> Maglev      
+        MH -> Maglev 
+        RH -> Rendezvous hashing
         """
         if self.Algo == "RR":
             self.HashObj = RoundRobin()
@@ -18,6 +20,8 @@ class HashEngine:
             self.HashObj = HashRing()
         elif self.Algo == "MH":
             self.HashObj = MaglevHash(7)
+        elif self.Algo == "RZ":
+            self.HashObj = RendezvousHash()
         #elif self.Algo == "AH":
         #    self.HashObj = AnchorHash()
 
