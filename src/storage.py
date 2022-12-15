@@ -24,6 +24,6 @@ class StorageSystem:
         if(latency < 0):
             tot_latency = 4.34*(size/size_in_bytes)
         else:
-            tot_latency = latency
+            tot_latency = latency*1000
         tot_time += tot_latency*1000
         return self.retrieval_time
