@@ -26,4 +26,5 @@ class StorageSystem:
         else:
             tot_latency = latency*1000
         tot_time += tot_latency*1000
-        return self.retrieval_time
+        print("tot_time: ", tot_time)
+        return int(tot_time)
