@@ -27,4 +27,5 @@ class StorageSystem:
             tot_latency = latency*1000
         tot_time += tot_latency*1000
         print("tot_time: ", tot_time)
+        # Counting time which is less than 1 ms as 0
         return int(tot_time)
